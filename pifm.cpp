@@ -10,6 +10,9 @@
 // - adapted timing
 // - timing and bandwidth - commandline parameters
 
+
+// more hax by sekio april 2016
+
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -410,7 +413,9 @@ public:
     }
 };
 
-#ifndef USE_RDS 
+// why again do we need this ?????
+// get rid
+#ifdef USE_RDS 
 
 const unsigned char RDSDATA[] = {
 // RDS data.  Send MSB first.  Google search gr_rds_data_encoder.cc to make your own data.
