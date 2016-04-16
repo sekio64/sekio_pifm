@@ -1,9 +1,6 @@
-// SSTV test program
-// 2013 Robert Marshall KI4MCW
-// 2014 Gerrit Polder, PA3BYA fixed header. 
-// 2016 fudge by sekio S3K10FUCKFCC
+// genrtty.c - make a RTTY stream
 
-// Note: Compile me thus:  gcc -lgd -lmagic -o sstvX sstvX.c
+// Note: Compile me thus:  gcc -lm genrtty.c -o genrtty
 
 // ===========
 // includes
@@ -214,6 +211,7 @@ main (int argc, char *argv[])
   g_fudge = 0.0;
   g_bitlength = (1.00f / g_baud) * 1000000.0f;
 
+/*
   printf ("Constants check:\n");
   printf ("      rate = %d\n", g_rate);
   printf ("      BITS = %d\n", BITS);
@@ -221,17 +219,17 @@ main (int argc, char *argv[])
   printf ("     scale = %d\n", g_scale);
   printf ("   us/samp = %f\n", g_uspersample);
   printf ("   2p/rate = %f\n\n", g_twopioverrate);
+*/
+  printf ("      mark = %d hz\n", g_markfreq);
+  printf ("     space = %d hz\n", g_spacefreq);
 
-  printf ("      mark = %d\n", g_markfreq);
-  printf ("     space = %d\n", g_spacefreq);
 
-
-  printf (" Baud rate = %d\n"
-	  " Bit width = %d\n"
+  printf (" Baud rate = %d bps\n"
+	  " Bit width = %d bit\n"
 	  "Parity bit = %s\n"
-	  " Stop bits = %d\n"
+	  " Stop bits = %d bit\n"
 	  "\n", g_baud, g_bitwidth, parity_string[g_parity], g_stopbits);
-  printf ("    us/bit = %f\n", g_bitlength);
+  printf ("    us/bit = %.3f\n", g_bitlength);
 
   // set filenames    
   strncpy (inputfile, argv[optind], strlen (argv[optind]));
@@ -344,19 +342,7 @@ getOddParity (unsigned char p)
   return p & 1;
 }
 
-// buildaudio -- Primary code for converting image data to audio.
-//               Reads color data for individual pixels from a libGD
-//               object, calls toneval() to convert the color data
-//               to an audio frequency, then calls playtone() to add
-//               that to the audio data. This routine assumes an image
-//               320 wide x 256 tall x 24 bit colorspace (8 bits each
-//               for R, G, and B). 
-//
-//               In Martin 1, the image data is sent one row at a time,
-//               once for green, once for blue, and once for red. There
-//               is a separator tone between each channel's audio, and
-//               a sync tone at the beginning of each new row. This 
-//               routine handles the sep/sync details as well. 
+// buildaudio -- Build a RTTY stream
 
 void
 buildaudio ()
@@ -368,6 +354,7 @@ buildaudio ()
 
   playtone(g_markfreq, g_bitlength*HEADER_BITS);//header
 
+  // loop on every character
   while ((c = fgetc (g_imgfp)) != EOF)
     {
       k = getOddParity ((char) c);
@@ -386,13 +373,14 @@ buildaudio ()
 	    }
 	  c = c >> 1;
 	}
+      //parity
       switch (g_parity)
 	{
 	case 0:
 	  break;
-	case 2:
+	case 2: //even
 	  k = (~k) & 1;
-	case 1:
+	case 1: //odd
 	  if (k & 1)
 	    {
 	      playtone (g_markfreq, g_bitlength);
@@ -402,16 +390,16 @@ buildaudio ()
 	      playtone (g_spacefreq, g_bitlength);
 	    };
 	  break;
-	case 3:
+	case 3: //always 0
 	      playtone (g_spacefreq, g_bitlength); break;
-	case 4:
+	case 4: // always 1
 	      playtone (g_markfreq, g_bitlength); break;
 	default:
 	  break;
 	}
       if((i%16)==0)
       printf (".");
-
+      // stop bits
       for (j = 0; j < g_stopbits; j++)
 	{
 	  playtone (g_markfreq, g_bitlength);
@@ -422,7 +410,8 @@ buildaudio ()
 
   printf ("Done.\n");
 
-}				// end buildaudio    
+}
+// end buildaudio
 
 
 // writefile_aiff -- Save audio data to an AIFF file. Playback for
