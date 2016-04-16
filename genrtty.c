@@ -37,10 +37,13 @@
 #define AUDIO_WAV
 //#define AUDIO_AIFF
 
+#define HEADER_BITS 1040
+#define TRAILER_BITS 240
+
 #define DEFAULT_BAUDRATE 300
 // blehg
 #define MARK_FREQ 1500
-#define SPACE_FREQ 500
+#define SPACE_FREQ 1200
 
 #define DEFAULT_BITWIDTH 8
 #define DEFAULT_PARITY 0
@@ -363,6 +366,8 @@ buildaudio ()
   unsigned char j;
   printf ("Build RTTY stream:");
 
+  playtone(g_markfreq, g_bitlength*HEADER_BITS);//header
+
   while ((c = fgetc (g_imgfp)) != EOF)
     {
       k = getOddParity ((char) c);
@@ -413,6 +418,7 @@ buildaudio ()
 	}
       i++;
     }
+  playtone(g_markfreq, g_bitlength*TRAILER_BITS);//trailer
 
   printf ("Done.\n");
 
@@ -436,7 +442,7 @@ writefile_aiff ()
   totalsize = 4 + 8 + 18 + 8 + audiosize;
 
   printf ("Writing audio data to file.\n");
-  printf ("Got a total of [%d] samples.\n", g_samples);
+  printf ("Got a total of [%d] samples (%f sec).\n", g_samples, (float)g_samples/g_rate);
 
   // "form" chunk
   fputs ("FORM", g_outfp);
@@ -515,7 +521,7 @@ writefile_wav ()
   blockalign = CHANS * BITS / 8;	// total bytes / sample
 
   printf ("Writing audio data to file.\n");
-  printf ("Got a total of [%d] samples.\n", g_samples);
+  printf ("Got a total of [%d] samples (%f sec).\n", g_samples, (float)g_samples/g_rate);
 
   // RIFF header 
   fputs ("RIFF", g_outfp);
